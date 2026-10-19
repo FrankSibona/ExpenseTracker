@@ -1,21 +1,7 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import NewExpenseModal from './src/screens/NewExpenseModal';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Hello World !!</Text>
-      <Text>This is my First React Native App</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+  // Cambiamos HomeScreen por NewExpenseModal para probar la US4
+  return <NewExpenseModal />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
