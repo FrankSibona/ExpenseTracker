@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 
@@ -11,8 +11,8 @@ export default function TabNavigator() {
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: '#2c3e50',
-                tabBarInactiveTintColor: '#95a5a6',
+                tabBarActiveTintColor: '#1e293b',
+                tabBarInactiveTintColor: '#94a3b8',
                 tabBarStyle: {
                     backgroundColor: '#ffffff',
                     borderTopWidth: 1,
@@ -22,7 +22,7 @@ export default function TabNavigator() {
                     paddingTop: 8,
                 },
                 tabBarLabelStyle: {
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: '600',
                 },
             }}
@@ -32,8 +32,12 @@ export default function TabNavigator() {
                 component={HomeScreen}
                 options={{
                     tabBarLabel: 'Inicio',
-                    tabBarIcon: () => (
-                        <Text style={{ fontSize: 20 }}>🏠</Text>
+                    tabBarIcon: ({ color, size, focused }) => (
+                        <Ionicons
+                            name={focused ? 'home' : 'home-outline'}
+                            size={size || 22}
+                            color={color}
+                        />
                     ),
                 }}
             />
@@ -42,8 +46,12 @@ export default function TabNavigator() {
                 component={ExpensesScreen}
                 options={{
                     tabBarLabel: 'Gastos',
-                    tabBarIcon: () => (
-                        <Text style={{ fontSize: 20 }}>📊</Text>
+                    tabBarIcon: ({ color, size, focused }) => (
+                        <Ionicons
+                            name={focused ? 'wallet' : 'wallet-outline'}
+                            size={size || 22}
+                            color={color}
+                        />
                     ),
                 }}
             />
