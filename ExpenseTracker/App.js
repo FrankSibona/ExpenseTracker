@@ -1,21 +1,7 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import StackNavigator from './src/navigation/StackNavigator';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Hello World !!</Text>
-      <Text>This is my First React Native App</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    // Renderizamos el StackNavigator que integra TabNavigator y las pantallas del Sprint (US6)
+    return <StackNavigator />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
