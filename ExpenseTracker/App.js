@@ -1,7 +1,7 @@
 import React from 'react';
-import NewExpenseModal from './src/screens/NewExpenseModal';
+import StackNavigator from './src/navigation/StackNavigator';
 
 export default function App() {
-  // Cambiamos HomeScreen por NewExpenseModal para probar la US4
-  return <NewExpenseModal />;
+    // Renderizamos el StackNavigator que integra TabNavigator y las pantallas del Sprint (US6)
+    return <StackNavigator />;
 }
