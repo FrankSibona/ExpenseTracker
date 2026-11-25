@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -44,6 +45,16 @@ export default function TabNavigator() {
                     tabBarLabel: 'Gastos',
                     tabBarIcon: () => (
                         <Text style={{ fontSize: 20 }}>📊</Text>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Ajustes"
+                component={SettingsScreen}
+                options={{
+                    tabBarLabel: 'Ajustes',
+                    tabBarIcon: () => (
+                        <Text style={{ fontSize: 20 }}>⚙️</Text>
                     ),
                 }}
             />

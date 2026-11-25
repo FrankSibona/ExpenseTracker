@@ -1,15 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
 import ExpenseItem from '../components/ExpenseItem';
-
-// Datos definidos manualmente según los escenarios de la User Story #5
-const GASTOS_INICIALES = [
-    { id: '1', descripcion: 'Supermercado', monto: 25000 },
-    { id: '2', descripcion: 'Combustible', monto: 18000 },
-    { id: '3', descripcion: 'Internet', monto: 32000 },
-];
+import { useExpenses } from '../context/ExpensesContext';
 
 export default function ExpensesScreen({ navigation }) {
+    const { expenses } = useExpenses();
+    const listaGastos = expenses || [];
+    const total = listaGastos.reduce((acc, curr) => acc + Number(curr.amount ?? curr.monto ?? 0), 0);
+
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
@@ -27,18 +25,36 @@ export default function ExpensesScreen({ navigation }) {
                 )}
             </View>
 
-            <FlatList
-                data={GASTOS_INICIALES}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ExpenseItem
-                        descripcion={item.descripcion}
-                        monto={item.monto}
-                    />
-                )}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-            />
+            {listaGastos.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>Todavía no registraste gastos.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={listaGastos}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                        <ExpenseItem
+                            title={item.title || item.descripcion}
+                            amount={item.amount ?? item.monto}
+                            onPress={() => navigation.navigate('ExpenseDetail', { id: item.id })}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    ListFooterComponent={
+                        <View style={styles.totalCard}>
+                            <View>
+                                <Text style={styles.totalLabel}>Total Acumulado</Text>
+                                <Text style={styles.totalCount}>
+                                    {listaGastos.length} {listaGastos.length === 1 ? 'gasto registrado' : 'gastos registrados'}
+                                </Text>
+                            </View>
+                            <Text style={styles.totalMonto}>${total.toLocaleString('es-AR')}</Text>
+                        </View>
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -79,5 +95,40 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 24,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#7f8c8d',
+        textAlign: 'center',
+    },
+    totalCard: {
+        backgroundColor: '#2c3e50',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    totalLabel: {
+        color: '#ecf0f1',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    totalCount: {
+        color: '#bdc3c7',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    totalMonto: {
+        color: '#ffffff',
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 });

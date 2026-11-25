@@ -1,13 +1,26 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function ExpenseItem({ descripcion, monto }) {
-    return (
+export default function ExpenseItem({ descripcion, title, monto, amount, onPress }) {
+    const itemTitle = title || descripcion;
+    const itemAmount = Number(amount ?? monto ?? 0);
+
+    const content = (
         <View style={styles.card}>
-            <Text style={styles.descripcion}>{descripcion}</Text>
-            <Text style={styles.monto}>${monto.toLocaleString('es-AR')}</Text>
+            <Text style={styles.descripcion} numberOfLines={1}>{itemTitle}</Text>
+            <Text style={styles.monto}>-${itemAmount.toLocaleString('es-AR')}</Text>
         </View>
     );
+
+    if (onPress) {
+        return (
+            <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+                {content}
+            </TouchableOpacity>
+        );
+    }
+
+    return content;
 }
 
 const styles = StyleSheet.create({
@@ -33,6 +46,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#2c3e50',
         flex: 1,
+        marginRight: 12,
     },
     monto: {
         fontSize: 16,

@@ -1,7 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { useExpenses } from '../context/ExpensesContext';
 
 export default function HomeScreen({ navigation }) {
+    const { expenses } = useExpenses();
+    const listaGastos = expenses || [];
+    const total = listaGastos.reduce((acc, curr) => acc + Number(curr.amount ?? curr.monto ?? 0), 0);
+
     return (
         <View style={styles.container}>
             {/* Nombre de la app */}
@@ -15,7 +20,20 @@ export default function HomeScreen({ navigation }) {
                 Esta aplicación te servirá para registrar y consultar todos tus gastos personales de manera rápida y sencilla.
             </Text>
 
-            {/* Botones de navegación para la US6 */}
+            {/* Resumen general */}
+            <View style={styles.summaryCard}>
+                <Text style={styles.summaryTitle}>Resumen registrado</Text>
+                <Text style={styles.summaryMovements}>
+                    {listaGastos.length > 0
+                        ? `${listaGastos.length} ${listaGastos.length === 1 ? 'movimiento registrado' : 'movimientos registrados'}`
+                        : 'Todavía no registraste gastos'}
+                </Text>
+                <Text style={styles.summaryTotal}>
+                    ${total.toLocaleString('es-AR')}
+                </Text>
+            </View>
+
+            {/* Botones de navegación */}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={styles.primaryButton}
@@ -38,7 +56,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f8f9fa',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
@@ -46,20 +64,44 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        marginBottom: 12,
+        marginBottom: 8,
         color: '#2c3e50',
     },
     subtitle: {
-        fontSize: 22,
-        marginBottom: 20,
+        fontSize: 20,
+        marginBottom: 16,
         color: '#34495e',
     },
     description: {
-        fontSize: 16,
+        fontSize: 15,
         textAlign: 'center',
         color: '#7f8c8d',
-        lineHeight: 24,
-        marginBottom: 36,
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    summaryCard: {
+        width: '100%',
+        backgroundColor: '#2c3e50',
+        borderRadius: 12,
+        padding: 18,
+        marginBottom: 24,
+        alignItems: 'center',
+    },
+    summaryTitle: {
+        color: '#ecf0f1',
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    summaryMovements: {
+        color: '#bdc3c7',
+        fontSize: 13,
+        marginBottom: 8,
+    },
+    summaryTotal: {
+        color: '#ffffff',
+        fontSize: 24,
+        fontWeight: 'bold',
     },
     buttonContainer: {
         width: '100%',
