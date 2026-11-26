@@ -12,11 +12,11 @@ export default function StackNavigator() {
             <Stack.Navigator
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: '#2c3e50',
+                        backgroundColor: '#1e293b',
                     },
                     headerTintColor: '#ffffff',
                     headerTitleStyle: {
-                        fontWeight: 'bold',
+                        fontWeight: '700',
                     },
                 }}
             >

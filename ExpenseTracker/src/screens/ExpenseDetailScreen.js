@@ -13,19 +13,19 @@ export default function ExpenseDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f8fafc',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
-        color: '#2c3e50',
+        fontWeight: '800',
+        color: '#0f172a',
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#7f8c8d',
+        fontSize: 15,
+        color: '#64748b',
     },
 });
