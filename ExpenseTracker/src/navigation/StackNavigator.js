@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TabNavigator from './TabNavigator';
 import NewExpenseModal from '../screens/NewExpenseModal';
+import ExpenseDetailScreen from '../screens/ExpenseDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,13 @@ export default function StackNavigator() {
                     name="MainTabs"
                     component={TabNavigator}
                     options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="ExpenseDetail"
+                    component={ExpenseDetailScreen}
+                    options={{
+                        title: 'Detalle del Gasto',
+                    }}
                 />
                 <Stack.Screen
                     name="NewExpenseModal"

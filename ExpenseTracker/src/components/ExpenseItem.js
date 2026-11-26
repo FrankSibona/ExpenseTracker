@@ -1,22 +1,15 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CATEGORY_STYLES, DEFAULT_CATEGORY_STYLE } from '../data/categories';
 
-// Paleta de colores e íconos para cada categoría (Bonus #rn-s1-us7)
-const CATEGORY_STYLES = {
-    'Comida': { bg: '#fff4e6', text: '#d97706', border: '#f59e0b', icon: 'restaurant-outline' },
-    'Transporte': { bg: '#e0f2fe', text: '#0284c7', border: '#38bdf8', icon: 'car-outline' },
-    'Servicios': { bg: '#f3e8ff', text: '#7c3aed', border: '#a855f7', icon: 'flash-outline' },
-    'Salud': { bg: '#ecfdf5', text: '#059669', border: '#34d399', icon: 'medkit-outline' },
-    'Entretenimiento': { bg: '#fdf2f8', text: '#db2777', border: '#f472b6', icon: 'game-controller-outline' },
-};
+export default function ExpenseItem({ descripcion, title, monto, amount, categoria, category, onPress }) {
+    const itemTitle = title || descripcion;
+    const itemAmount = Number(amount ?? monto ?? 0);
+    const itemCategory = category || categoria;
+    const categoryTheme = (itemCategory && CATEGORY_STYLES[itemCategory]) || DEFAULT_CATEGORY_STYLE;
 
-const DEFAULT_CATEGORY_STYLE = { bg: '#f1f5f9', text: '#475569', border: '#94a3b8', icon: 'pricetag-outline' };
-
-export default function ExpenseItem({ descripcion, monto, categoria }) {
-    const categoryTheme = (categoria && CATEGORY_STYLES[categoria]) || DEFAULT_CATEGORY_STYLE;
-
-    return (
+    const content = (
         <View style={styles.card}>
             <View style={[styles.iconContainer, { backgroundColor: categoryTheme.bg }]}>
                 <Ionicons
@@ -27,19 +20,29 @@ export default function ExpenseItem({ descripcion, monto, categoria }) {
             </View>
 
             <View style={styles.infoContainer}>
-                <Text style={styles.descripcion}>{descripcion}</Text>
-                {categoria ? (
+                <Text style={styles.descripcion} numberOfLines={1}>{itemTitle}</Text>
+                {itemCategory ? (
                     <View style={[styles.badge, { backgroundColor: categoryTheme.bg }]}>
                         <Text style={[styles.badgeText, { color: categoryTheme.text }]}>
-                            {categoria}
+                            {itemCategory}
                         </Text>
                     </View>
                 ) : null}
             </View>
 
-            <Text style={styles.monto}>-${monto.toLocaleString('es-AR')}</Text>
+            <Text style={styles.monto}>-${itemAmount.toLocaleString('es-AR')}</Text>
         </View>
     );
+
+    if (onPress) {
+        return (
+            <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+                {content}
+            </TouchableOpacity>
+        );
+    }
+
+    return content;
 }
 
 const styles = StyleSheet.create({

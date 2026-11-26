@@ -1,39 +1,59 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+    StyleSheet,
+    Text,
+    View,
+    TextInput,
+    TouchableOpacity,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useExpenses } from '../context/ExpensesContext';
+import { CATEGORIES } from '../data/categories';
 
 export default function NewExpenseModal({ navigation }) {
-    // Estados para guardar temporalmente lo que el usuario escribe
+    const { addExpense } = useExpenses();
     const [nombre, setNombre] = useState('');
     const [monto, setMonto] = useState('');
-    const [categoria, setCategoria] = useState('');
+    const [categoria, setCategoria] = useState(CATEGORIES[0]?.name || 'Alimentación');
+    const [notas, setNotas] = useState('');
 
-    // Función que se ejecuta al presionar el botón "Guardar"
     const handleGuardar = () => {
-        if (!nombre.trim() || !monto.trim()) {
-            Alert.alert('Campos incompletos', 'Por favor ingresa al menos el nombre y el monto del gasto.');
+        const nombreLimpio = nombre.trim();
+        const montoNormalizado = String(monto).replace(',', '.').trim();
+        const montoNumerico = parseFloat(montoNormalizado);
+
+        // Validación: nombre no vacío
+        if (!nombreLimpio) {
+            Alert.alert('Campo requerido', 'Por favor ingresa un nombre para el gasto.');
             return;
         }
 
-        Alert.alert(
-            '¡Gasto Registrado!',
-            `Nombre: ${nombre}\nMonto: $${monto}\nCategoría: ${categoria || 'General'}`,
-            [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        // Limpiamos los campos
-                        setNombre('');
-                        setMonto('');
-                        setCategoria('');
-                        // Regresamos a la pantalla anterior si estamos navegando
-                        if (navigation && navigation.goBack) {
-                            navigation.goBack();
-                        }
-                    },
-                },
-            ]
-        );
+        // Validación: monto mayor a 0
+        if (!Number.isFinite(montoNumerico) || montoNumerico <= 0) {
+            Alert.alert('Monto inválido', 'Por favor ingresa un monto mayor a 0.');
+            return;
+        }
+
+        // Llamada a addExpense del Context con el monto como número
+        addExpense({
+            title: nombreLimpio,
+            amount: montoNumerico,
+            category: categoria,
+            notes: notas.trim(),
+            createdAt: new Date().toISOString(),
+        });
+
+        // Limpieza y cierre
+        setNombre('');
+        setMonto('');
+        setNotas('');
+        if (navigation && navigation.goBack) {
+            navigation.goBack();
+        }
     };
 
     return (
@@ -41,7 +61,11 @@ export default function NewExpenseModal({ navigation }) {
             style={styles.keyboardContainer}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.card}>
                     <View style={styles.headerIconContainer}>
                         <Ionicons name="card-outline" size={28} color="#1e293b" />
@@ -52,12 +76,12 @@ export default function NewExpenseModal({ navigation }) {
 
                     {/* Campo Nombre */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Descripción / Comercio</Text>
+                        <Text style={styles.label}>Descripción / Comercio *</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="pricetag-outline" size={18} color="#94a3b8" style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Ej. Supermercado Coto"
+                                placeholder="Ej. Supermercado"
                                 placeholderTextColor="#94a3b8"
                                 value={nombre}
                                 onChangeText={setNombre}
@@ -67,7 +91,7 @@ export default function NewExpenseModal({ navigation }) {
 
                     {/* Campo Monto */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Monto</Text>
+                        <Text style={styles.label}>Monto *</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="cash-outline" size={18} color="#94a3b8" style={styles.inputIcon} />
                             <TextInput
@@ -81,19 +105,42 @@ export default function NewExpenseModal({ navigation }) {
                         </View>
                     </View>
 
-                    {/* Campo Categoría */}
+                    {/* Selector de Categoría mediante chips */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Categoría</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="folder-outline" size={18} color="#94a3b8" style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ej. Comida, Transporte, Servicios"
-                                placeholderTextColor="#94a3b8"
-                                value={categoria}
-                                onChangeText={setCategoria}
-                            />
+                        <View style={styles.chipsContainer}>
+                            {CATEGORIES.map((cat) => {
+                                const isSelected = categoria === cat.name;
+                                return (
+                                    <TouchableOpacity
+                                        key={cat.id}
+                                        style={[
+                                            styles.chip,
+                                            isSelected && { backgroundColor: cat.color, borderColor: cat.color },
+                                        ]}
+                                        onPress={() => setCategoria(cat.name)}
+                                    >
+                                        <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                                            {cat.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
+                    </View>
+
+                    {/* Campo Notas */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Notas (opcional)</Text>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            placeholder="Notas adicionales..."
+                            placeholderTextColor="#94a3b8"
+                            value={notas}
+                            onChangeText={setNotas}
+                            multiline
+                            numberOfLines={3}
+                        />
                     </View>
 
                     {/* Botón Guardar */}
@@ -130,12 +177,14 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 32,
     },
     card: {
         backgroundColor: '#ffffff',
         borderRadius: 20,
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingVertical: 28,
         borderWidth: 1,
         borderColor: '#e2e8f0',
         shadowColor: '#000',
@@ -152,13 +201,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         alignSelf: 'center',
-        marginBottom: 12,
+        marginBottom: 14,
     },
     title: {
         fontSize: 22,
         fontWeight: '800',
-        textAlign: 'center',
         color: '#0f172a',
+        textAlign: 'center',
         marginBottom: 4,
     },
     subtitle: {
@@ -168,21 +217,21 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     inputGroup: {
-        marginBottom: 16,
+        marginBottom: 18,
     },
     label: {
         fontSize: 13,
         fontWeight: '700',
         color: '#334155',
-        marginBottom: 6,
+        marginBottom: 8,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8fafc',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
+        borderColor: '#cbd5e1',
         borderRadius: 12,
+        backgroundColor: '#ffffff',
         paddingHorizontal: 12,
     },
     inputIcon: {
@@ -194,39 +243,70 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#0f172a',
     },
+    textArea: {
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 12,
+        padding: 12,
+        height: 80,
+        textAlignVertical: 'top',
+    },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    chip: {
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        backgroundColor: '#f8fafc',
+    },
+    chipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    chipTextSelected: {
+        color: '#ffffff',
+    },
     primaryButton: {
         backgroundColor: '#1e293b',
-        paddingVertical: 14,
+        paddingVertical: 15,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 8,
         shadowColor: '#1e293b',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.16,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
         shadowRadius: 6,
-        elevation: 2,
+        elevation: 3,
     },
     primaryButtonText: {
         color: '#ffffff',
         fontSize: 15,
         fontWeight: '700',
     },
-    buttonIcon: {
-        marginRight: 8,
-    },
     secondaryButton: {
-        backgroundColor: 'transparent',
-        paddingVertical: 13,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 8,
+        marginTop: 10,
     },
     secondaryButtonText: {
         color: '#64748b',
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
+    },
+    buttonIcon: {
+        marginRight: 8,
     },
 });

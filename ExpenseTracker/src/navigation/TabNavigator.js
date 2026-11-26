@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -52,6 +53,16 @@ export default function TabNavigator() {
                             size={size || 22}
                             color={color}
                         />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Ajustes"
+                component={SettingsScreen}
+                options={{
+                    tabBarLabel: 'Ajustes',
+                    tabBarIcon: () => (
+                        <Text style={{ fontSize: 20 }}>⚙️</Text>
                     ),
                 }}
             />

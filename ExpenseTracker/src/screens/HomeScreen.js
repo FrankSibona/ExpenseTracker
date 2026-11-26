@@ -1,8 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useExpenses } from '../context/ExpensesContext';
 
 export default function HomeScreen({ navigation }) {
+    const { expenses } = useExpenses();
+    const listaGastos = expenses || [];
+    const total = listaGastos.reduce((acc, curr) => acc + Number(curr.amount ?? curr.monto ?? 0), 0);
+
     return (
         <ScrollView
             contentContainerStyle={styles.container}
@@ -23,7 +28,23 @@ export default function HomeScreen({ navigation }) {
             {/* Mensaje de bienvenida */}
             <Text style={styles.subtitle}>¡Te damos la bienvenida!</Text>
 
-            {/* Botones de navegación para la US6 */}
+            {/* Resumen general con gastos reales del Context (#main-s3-us2) */}
+            <View style={styles.summaryCard}>
+                <View style={styles.summaryHeader}>
+                    <Ionicons name="pie-chart-outline" size={20} color="#94a3b8" style={{ marginRight: 8 }} />
+                    <Text style={styles.summaryTitle}>Resumen de gastos</Text>
+                </View>
+                <Text style={styles.summaryMovements}>
+                    {listaGastos.length > 0
+                        ? `${listaGastos.length} ${listaGastos.length === 1 ? 'movimiento registrado' : 'movimientos registrados'}`
+                        : 'Todavía no registraste gastos'}
+                </Text>
+                <Text style={styles.summaryTotal}>
+                    ${total.toLocaleString('es-AR')}
+                </Text>
+            </View>
+
+            {/* Botones de navegación */}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={styles.primaryButton}
@@ -57,13 +78,13 @@ const styles = StyleSheet.create({
         paddingVertical: 48,
     },
     imageContainer: {
-        marginBottom: 24,
+        marginBottom: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
     illustration: {
-        width: 250,
-        height: 180,
+        width: 240,
+        height: 160,
     },
     title: {
         fontSize: 30,
@@ -72,10 +93,43 @@ const styles = StyleSheet.create({
         color: '#0f172a',
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '500',
-        marginBottom: 36,
+        marginBottom: 24,
         color: '#64748b',
+    },
+    summaryCard: {
+        width: '100%',
+        backgroundColor: '#1e293b',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 24,
+        alignItems: 'center',
+        shadowColor: '#1e293b',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    summaryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    summaryTitle: {
+        color: '#94a3b8',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    summaryMovements: {
+        color: '#cbd5e1',
+        fontSize: 13,
+        marginBottom: 10,
+    },
+    summaryTotal: {
+        color: '#ffffff',
+        fontSize: 26,
+        fontWeight: '800',
     },
     buttonContainer: {
         width: '100%',

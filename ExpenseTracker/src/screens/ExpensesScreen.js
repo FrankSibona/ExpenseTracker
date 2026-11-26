@@ -2,17 +2,12 @@ import React from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ExpenseItem from '../components/ExpenseItem';
-
-// Datos definidos manualmente según los escenarios de la User Story #5 y categorías del Bonus #rn-s1-us7
-const GASTOS_INICIALES = [
-    { id: '1', descripcion: 'Supermercado', monto: 25000, categoria: 'Comida' },
-    { id: '2', descripcion: 'Combustible', monto: 18000, categoria: 'Transporte' },
-    { id: '3', descripcion: 'Internet', monto: 32000, categoria: 'Servicios' },
-];
+import { useExpenses } from '../context/ExpensesContext';
 
 export default function ExpensesScreen({ navigation }) {
-    // Cálculo del total acumulado de gastos (Bonus #rn-s1-us7)
-    const totalGastos = GASTOS_INICIALES.reduce((acc, gasto) => acc + gasto.monto, 0);
+    const { expenses } = useExpenses();
+    const listaGastos = expenses || [];
+    const totalGastos = listaGastos.reduce((acc, curr) => acc + Number(curr.amount ?? curr.monto ?? 0), 0);
 
     return (
         <View style={styles.container}>
@@ -32,35 +27,47 @@ export default function ExpensesScreen({ navigation }) {
                 )}
             </View>
 
-            <FlatList
-                data={GASTOS_INICIALES}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ExpenseItem
-                        descripcion={item.descripcion}
-                        monto={item.monto}
-                        categoria={item.categoria}
-                    />
-                )}
-                ListFooterComponent={
-                    <View style={styles.totalCard}>
-                        <View style={styles.totalHeaderLeft}>
-                            <View style={styles.totalIconBadge}>
-                                <Ionicons name="wallet-outline" size={20} color="#ffffff" />
+            {listaGastos.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="receipt-outline" size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+                    <Text style={styles.emptyText}>Todavía no registraste gastos.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={listaGastos}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                        <ExpenseItem
+                            title={item.title || item.descripcion}
+                            amount={item.amount ?? item.monto}
+                            category={item.category || item.categoria}
+                            onPress={() => navigation.navigate('ExpenseDetail', { id: item.id })}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    ListFooterComponent={
+                        <View style={styles.totalCard}>
+                            <View style={styles.totalHeaderLeft}>
+                                <View style={styles.totalIconBadge}>
+                                    <Ionicons name="wallet-outline" size={20} color="#ffffff" />
+                                </View>
+                                <View>
+                                    <Text style={styles.totalLabel}>Total Acumulado</Text>
+                                    <Text style={styles.totalCount}>
+                                        {listaGastos.length === 0
+                                            ? '0 gastos registrados'
+                                            : `${listaGastos.length} ${listaGastos.length === 1 ? 'gasto registrado' : 'gastos registrados'}`}
+                                    </Text>
+                                </View>
                             </View>
-                            <View>
-                                <Text style={styles.totalLabel}>Total Acumulado</Text>
-                                <Text style={styles.totalCount}>{GASTOS_INICIALES.length} gastos registrados</Text>
-                            </View>
+                            <Text style={styles.totalMonto}>
+                                ${totalGastos.toLocaleString('es-AR')}
+                            </Text>
                         </View>
-                        <Text style={styles.totalMonto}>
-                            ${totalGastos.toLocaleString('es-AR')}
-                        </Text>
-                    </View>
-                }
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-            />
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -108,6 +115,17 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 28,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#64748b',
+        textAlign: 'center',
     },
     totalCard: {
         backgroundColor: '#1e293b',
