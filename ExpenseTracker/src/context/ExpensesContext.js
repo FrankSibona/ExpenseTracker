@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    deleteDoc,
+    doc,
+    serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '../services/firebase';
 
 // Claves de almacenamiento
 export const EXPENSES_STORAGE_KEY = '@expensetracker/expenses';
@@ -15,64 +26,41 @@ const ExpensesContext = createContext(null);
 export function ExpensesProvider({ children }) {
     const [expenses, setExpenses] = useState([]);
     const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isExpensesLoaded, setIsExpensesLoaded] = useState(false);
+    const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
-    // 1. Efecto de montaje: Hidratación desde AsyncStorage
+    const isLoaded = isExpensesLoaded && isSettingsLoaded;
+
+    // 1. Hidratación de ajustes locales desde AsyncStorage (Capa 1)
     useEffect(() => {
         let isMounted = true;
 
-        async function loadStoredData() {
+        async function loadStoredSettings() {
             try {
-                const [storedExpenses, storedSettings] = await Promise.all([
-                    AsyncStorage.getItem(EXPENSES_STORAGE_KEY),
-                    AsyncStorage.getItem(SETTINGS_STORAGE_KEY),
-                ]);
-
-                if (!isMounted) return;
-
-                if (storedExpenses !== null) {
-                    const parsedExpenses = JSON.parse(storedExpenses);
-                    setExpenses(Array.isArray(parsedExpenses) ? parsedExpenses : []);
-                }
-
-                if (storedSettings !== null) {
+                const storedSettings = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
+                if (storedSettings !== null && isMounted) {
                     const parsedSettings = JSON.parse(storedSettings);
                     setSettings((prev) => ({ ...prev, ...parsedSettings }));
                 }
             } catch (error) {
-                console.error('[ExpensesContext] Error al cargar datos desde AsyncStorage:', error);
+                console.error('[ExpensesContext] Error al cargar ajustes desde AsyncStorage:', error);
             } finally {
                 if (isMounted) {
-                    setIsLoaded(true);
+                    setIsSettingsLoaded(true);
                 }
             }
         }
 
-        loadStoredData();
+        loadStoredSettings();
 
         return () => {
             isMounted = false;
         };
     }, []);
 
-    // 2. Efecto de persistencia de gastos: SÓLO si isLoaded es true
+    // 2. Persistencia de ajustes en AsyncStorage ante cada cambio
     useEffect(() => {
-        if (!isLoaded) return;
-
-        async function persistExpenses() {
-            try {
-                await AsyncStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-            } catch (error) {
-                console.error('[ExpensesContext] Error al guardar gastos en AsyncStorage:', error);
-            }
-        }
-
-        persistExpenses();
-    }, [expenses, isLoaded]);
-
-    // 3. Efecto de persistencia de ajustes: SÓLO si isLoaded es true
-    useEffect(() => {
-        if (!isLoaded) return;
+        if (!isSettingsLoaded) return;
 
         async function persistSettings() {
             try {
@@ -83,36 +71,110 @@ export function ExpensesProvider({ children }) {
         }
 
         persistSettings();
-    }, [settings, isLoaded]);
+    }, [settings, isSettingsLoaded]);
 
+    // 3. Suscripción en tiempo real a Cloud Firestore para gastos (Capa 2)
+    useEffect(() => {
+        let unsubscribe = () => {};
+
+        try {
+            const q = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'));
+
+            unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    const items = snapshot.docs.map((docSnap) => {
+                        const data = docSnap.data({ serverTimestamps: 'estimate' });
+
+                        let createdAt = new Date().toISOString();
+                        if (data.createdAt) {
+                            if (typeof data.createdAt.toDate === 'function') {
+                                createdAt = data.createdAt.toDate().toISOString();
+                            } else if (data.createdAt instanceof Date) {
+                                createdAt = data.createdAt.toISOString();
+                            } else if (typeof data.createdAt === 'string') {
+                                createdAt = data.createdAt;
+                            }
+                        }
+
+                        const title = (data.title || data.descripcion || '').trim();
+                        const amount = Number(data.amount ?? data.monto ?? 0);
+                        const category = data.category || data.categoria || 'Alimentación';
+                        const notes = (data.notes ?? data.notas ?? '').trim();
+
+                        return {
+                            id: docSnap.id,
+                            title,
+                            amount,
+                            category,
+                            notes,
+                            createdAt,
+                            // Alias para compatibilidad con vistas existentes
+                            descripcion: title,
+                            monto: amount,
+                            categoria: category,
+                            notas: notes,
+                            fecha: createdAt,
+                        };
+                    });
+
+                    setExpenses(items);
+                    setIsExpensesLoaded(true);
+                },
+                (error) => {
+                    console.error('[ExpensesContext] Error en onSnapshot de Firestore:', error);
+                    setIsExpensesLoaded(true);
+                }
+            );
+        } catch (err) {
+            console.error('[ExpensesContext] Error al inicializar Firestore listener:', err);
+            setIsExpensesLoaded(true);
+        }
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+
+    // 4. Alta de gasto: addDoc() con serverTimestamp() sin await (Optimistic UI)
     const addExpense = (data) => {
         const title = (data.title || data.descripcion || '').trim();
         const amount = Number(data.amount ?? data.monto ?? 0);
         const category = data.category || data.categoria || 'Alimentación';
         const notes = (data.notes ?? data.notas ?? '').trim();
-        const createdAt = data.createdAt || data.fecha || new Date().toISOString();
 
-        const newExpense = {
-            id: data.id || Math.random().toString(36).substring(2, 9),
+        const newDocData = {
             title,
             amount,
             category,
             notes,
-            createdAt,
-            // Alias para compatibilidad con código existente
+            createdAt: serverTimestamp(),
+        };
+
+        addDoc(collection(db, 'expenses'), newDocData).catch((err) => {
+            console.error('[ExpensesContext] Error al guardar gasto en Firestore:', err);
+        });
+
+        return {
+            title,
+            amount,
+            category,
+            notes,
+            createdAt: new Date().toISOString(),
             descripcion: title,
             monto: amount,
             categoria: category,
             notas: notes,
-            fecha: createdAt,
+            fecha: new Date().toISOString(),
         };
-
-        setExpenses((prev) => [newExpense, ...prev]);
-        return newExpense;
     };
 
+    // 5. Baja de gasto: deleteDoc()
     const removeExpense = (id) => {
-        setExpenses((prev) => prev.filter((item) => String(item.id) !== String(id)));
+        if (!id) return;
+        deleteDoc(doc(db, 'expenses', String(id))).catch((err) => {
+            console.error('[ExpensesContext] Error al eliminar gasto en Firestore:', err);
+        });
     };
 
     const updateSettings = (newSettings) => {
